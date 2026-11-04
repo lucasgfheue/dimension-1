@@ -18,17 +18,31 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Preparar Gradle
+      - name: Buscar la carpeta del mod
+        id: proyecto
+        run: |
+          ARCHIVO=$(find . -name settings.gradle -not -path './.git/*' | head -n 1)
+          if [ -z "$ARCHIVO" ]; then
+            echo "::error::No encuentro settings.gradle en el repositorio. Estos son los archivos subidos:"
+            find . -not -path './.git*' | sort | head -n 300
+            exit 1
+          fi
+          RUTA=$(dirname "$ARCHIVO")
+          echo "El mod esta en: $RUTA"
+          echo "ruta=$RUTA" >> "$GITHUB_OUTPUT"
+
+      - name: Instalar Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.2.1'
 
       - name: Compilar el mod
-        run: |
-          chmod +x ./gradlew
-          ./gradlew build --no-daemon
+        working-directory: ${{ steps.proyecto.outputs.ruta }}
+        run: gradle build --no-daemon
 
       - name: Subir el .jar
         uses: actions/upload-artifact@v4
         with:
           name: saltalandia-mod
-          path: build/libs/*.jar
+          path: ${{ steps.proyecto.outputs.ruta }}/build/libs/*.jar
           if-no-files-found: error
