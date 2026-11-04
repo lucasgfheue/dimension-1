@@ -18,6 +18,19 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
+      - name: Descomprimir el mod (si subiste el .zip o .rar)
+        run: |
+          if [ -z "$(find . -name settings.gradle -not -path './.git/*' | head -n 1)" ]; then
+            find . -maxdepth 2 -type f \( -iname '*.zip' -o -iname '*.rar' -o -iname '*.7z' \) -not -path './.git/*' -print0 |
+              while IFS= read -r -d '' archivo; do
+                echo "Descomprimiendo: $archivo"
+                case "${archivo,,}" in
+                  *.zip) unzip -q -o "$archivo" -d _mod ;;
+                  *) 7z x -y -o_mod "$archivo" > /dev/null ;;
+                esac
+              done
+          fi
+
       - name: Buscar la carpeta del mod
         id: proyecto
         run: |
